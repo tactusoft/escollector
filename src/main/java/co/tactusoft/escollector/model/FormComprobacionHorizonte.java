@@ -15,6 +15,7 @@ public class FormComprobacionHorizonte implements Serializable {
 
     Integer id;
     Integer idFormComprobacion;
+    String nroObservacion;
     Integer numeroHorizonte;
     Integer profundidad;
     Integer colorHue;
@@ -44,7 +45,7 @@ public class FormComprobacionHorizonte implements Serializable {
     public FormComprobacionHorizonte() {
     }
 
-    public FormComprobacionHorizonte(Integer id, Integer idFormComprobacion, Integer numeroHorizonte, Integer profundidad,
+    public FormComprobacionHorizonte(Integer id, Integer idFormComprobacion, String nroObservacion, Integer numeroHorizonte, Integer profundidad,
                                      Integer colorHue, Integer colorValue, Integer colorChroma, Integer colorPorcentaje,
                                      Integer tipoMaterial, Integer claseTextural, Integer modificadorTextura, Integer claseOrganico,
                                      Integer claseComposicion, Integer texturaPorcentaje, Integer estructuraTipo, Integer estructuraClase,
@@ -52,6 +53,7 @@ public class FormComprobacionHorizonte implements Serializable {
                                      Integer horizonteCaracterisitica, String texturaOtro, String estructuraOtra) {
         this.id = id;
         this.idFormComprobacion = idFormComprobacion;
+        this.nroObservacion = nroObservacion;
         this.numeroHorizonte = numeroHorizonte;
         this.profundidad = profundidad;
         this.colorHue = colorHue;
@@ -89,6 +91,14 @@ public class FormComprobacionHorizonte implements Serializable {
 
     public void setIdFormComprobacion(Integer idFormComprobacion) {
         this.idFormComprobacion = idFormComprobacion;
+    }
+
+    public String getNroObservacion() {
+        return nroObservacion;
+    }
+
+    public void setNroObservacion(String nroObservacion) {
+        this.nroObservacion = nroObservacion;
     }
 
     public Integer getNumeroHorizonte() {

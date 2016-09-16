@@ -15,16 +15,20 @@ import java.nio.file.Files;
 import java.nio.file.PathMatcher;
 import java.nio.file.Paths;
 import java.sql.Connection;
+import java.sql.Date;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.text.SimpleDateFormat;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Properties;
 import java.util.logging.FileHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.postgresql.util.PSQLException;
 
 /**
  *
@@ -54,7 +58,7 @@ public class Principal {
                     if (matcher.matches(filePath)) {
                         LOGGER.log(Level.INFO, "ESCOLLECTOR: Leyendo base de datos {0}", filePath.toString());
                         readDatabase(filePath.toString());
-                        writeDatabase();
+                        writeDatabase(filePath.toString());
                     }
                 }
             });
@@ -260,35 +264,192 @@ public class Principal {
         }
     }
 
-    public void writeDatabase() {
+    public void writeDatabase(String database) {
+        int count;
         try {
             Class.forName("org.postgresql.Driver");
             Properties props = new Properties();
             props.setProperty("user", "postgres");
-            props.setProperty("password", "Casn200507*");
-            try (Connection connection = DriverManager.getConnection("jdbc:postgresql://localhost:5432/escollectordb", props)) {
+            props.setProperty("password", "administrator");
+            try (Connection connection = DriverManager.getConnection("jdbc:postgresql://192.168.0.43:5432/escollectordb", props)) {
                 LOGGER.log(Level.INFO, "ESCOLLECTOR: Abriendo base de datos destino");
                 String message = "ESCOLLECTOR: Escribiendo en tabla form_comprobacion " + String.valueOf(formComprobacionlist.size()) + " registros";
                 LOGGER.log(Level.INFO, message);
+                String insertFormComprobacion = "INSERT INTO public.form_comprobacion(\n"
+                        + "            nro_observacion, reconocedor, fecha_hora, longitud, latitud, \n"
+                        + "            altitud, nombre_sitio, epoca_climatica, dias_lluvia, pendiente_longitud, \n"
+                        + "            grado_erosion, tipo_movimiento, anegamiento, frecuencia, duracion, \n"
+                        + "            pedregosidad, afloramiento, fragmento_suelo, drenaje_natural, \n"
+                        + "            profundidad_efectiva, epidedones, endopedones, estado, paisaje, \n"
+                        + "            simbolo)\n"
+                        + "    VALUES (?, ?, ?, ?, ?, \n"
+                        + "            ?, ?, ?, ?, ?, \n"
+                        + "            ?, ?, ?, ?, ?, \n"
+                        + "            ?, ?, ?, ?, \n"
+                        + "            ?, ?, ?, ?, ?, \n"
+                        + "            ?)";
+                
+                PreparedStatement preparedStatement;
+                count = 0;
                 for (FormComprobacion row : formComprobacionlist) {
+                    preparedStatement = connection.prepareStatement(insertFormComprobacion);
+                    preparedStatement.setString(1, row.getNroObservacion());
+                    preparedStatement.setInt(2, row.getReconocedor());
+                    preparedStatement.setDate(3, getDate(row.getFechaHora()));
+                    preparedStatement.setDouble(4, row.getLongitud());
+                    preparedStatement.setDouble(5, row.getLatitud());
+                    preparedStatement.setDouble(6, row.getAltitud());
+                    preparedStatement.setString(7, row.getNombreSitio());
+                    preparedStatement.setInt(8, row.getEpocaClimatica());
+                    preparedStatement.setString(9, row.getDiasLluvia());
+                    preparedStatement.setInt(10, row.getPendienteLongitud());
+                    preparedStatement.setInt(11, row.getGradoErosion());
+                    preparedStatement.setInt(12, row.getTipoMovimiento());
+                    preparedStatement.setInt(13, row.getAnegamiento());
+                    preparedStatement.setInt(14, row.getFrecuencia());
+                    preparedStatement.setInt(15, row.getDuracion());
+                    preparedStatement.setInt(16, row.getPedregosidad());
+                    preparedStatement.setInt(17, row.getAfloramiento());
+                    preparedStatement.setInt(18, row.getFragmentoSuelo());
+                    preparedStatement.setInt(19, row.getDrenajeNatural());
+                    preparedStatement.setInt(20, row.getProfundidadEfectiva());
+                    preparedStatement.setInt(21, row.getEpidedones());
+                    preparedStatement.setInt(22, row.getEndopedones());
+                    preparedStatement.setInt(23, row.getEstado());
+                    preparedStatement.setString(24, row.getPaisaje());
+                    preparedStatement.setString(25, row.getSimbolo());
 
+                    try {
+                        preparedStatement.executeUpdate();
+                        message = "ESCOLLECTOR: Insertado en la base de datos " + database + " en tabla form_comprobacion el NroObservacion " + row.getNroObservacion();
+                        LOGGER.log(Level.INFO, message);
+                        count++;
+                    } catch (PSQLException ex) {
+                        if (ex.getSQLState().equals("23505")) {
+                            message = "ESCOLLECTOR: Error en la base de datos " + database + " en tabla form_comprobacion ya existe el NroObservacion " + row.getNroObservacion();
+                            LOGGER.log(Level.INFO, message);
+                        } else {
+                            LOGGER.log(Level.INFO, "ESCOLLECTOR: Error en la base de datos {0} en tabla form_comprobacion Error:{1}", new Object[]{database, ex.getMessage()});
+                        }
+                    }
                 }
+                
+                message = "ESCOLLECTOR: En la base de datos " + database + " total de registros insertados en tabla form_comprobacion " + count;
+                LOGGER.log(Level.INFO, message);
 
+                /*String insertFormComprobacionHorizonte = "INSERT INTO public.form_comprobacion_horizonte(\n"
+                        + "            nro_observacion, numero_horizonte, profundidad, color_hue, color_value, \n"
+                        + "            color_chroma, color_porcentaje, tipo_material, clase_textural, \n"
+                        + "            modificador_textura, clase_organico, clase_composicion, textura_porcentaje, \n"
+                        + "            estructura_tipo, estructura_clase, estructura_grado, forma_rompe, \n"
+                        + "            motivo_no_estructura, horizonte_clase, horizonte_caracterisitica, \n"
+                        + "            textura_otro, estructura_otra)\n"
+                        + "    VALUES (?, ?, ?, ?, ?, \n"
+                        + "            ?, ?, ?, ?, \n"
+                        + "            ?, ?, ?, ?, \n"
+                        + "            ?, ?, ?, ?, \n"
+                        + "            ?, ?, ?, \n"
+                        + "            ?, ?)";
                 message = "ESCOLLECTOR: Escribiendo en tabla form_comprobacion_horizonte " + String.valueOf(formComprobacionHorizonteList.size()) + " registros";
                 LOGGER.log(Level.INFO, message);
                 for (FormComprobacionHorizonte row : formComprobacionHorizonteList) {
+                    preparedStatement = connection.prepareStatement(insertFormComprobacionHorizonte);
 
-                }
+                    try {
+                        preparedStatement.executeUpdate();
+                    } catch (PSQLException ex) {
+                        if (ex.getSQLState().equals("23505")) {
+                            message = "ESCOLLECTOR: Error en la base de datos " + database + " en tabla form_comprobacion_horizonte ya existe el NroObservacion " + row.getNroObservacion() + " con horizonte " + row.getNumeroHorizonte();
+                            LOGGER.log(Level.INFO, message);
+                        } else {
+                            LOGGER.log(Level.INFO, "ESCOLLECTOR: Error en la base de datos {0} en tabla form_comprobacion_horizonte Error:{1}", new Object[]{database, ex.getMessage()});
+                        }
+                    }
+                }*/
 
+                String insertNotaCampo = "INSERT INTO public.form_nota_campo(\n"
+                        + "            nro_observacion, reconocedor, fecha_hora, longitud, latitud, \n"
+                        + "            altitud, nombre_sitio, epoca_climatica, dias_lluvia, gradiente, \n"
+                        + "            pendiente_longitud, pendiente_forma, clase_erosion, tipo_erosion, \n"
+                        + "            grado_erosion, clase_movimiento, tipo_movimiento, frecuencia_movimiento, \n"
+                        + "            anegamiento, frecuencia, duracion, pedregosidad, afloramiento, \n"
+                        + "            vegetacion_natural, grupo_uso, subgrupo_uso, nombre_cultivo, \n"
+                        + "            observaciones, estado, paisaje, simbolo)\n"
+                        + "    VALUES (?, ?, ?, ?, ?, \n"
+                        + "            ?, ?, ?, ?, ?, \n"
+                        + "            ?, ?, ?, ?, \n"
+                        + "            ?, ?, ?, ?, \n"
+                        + "            ?, ?, ?, ?, ?, \n"
+                        + "            ?, ?, ?, ?, \n"
+                        + "            ?, ?, ?, ?)";
                 message = "ESCOLLECTOR: Escribiendo en tabla form_nota_campo " + String.valueOf(formNotaCampoList.size()) + " registros";
                 LOGGER.log(Level.INFO, message);
+                count = 0;
                 for (FormNotaCampo row : formNotaCampoList) {
+                    preparedStatement = connection.prepareStatement(insertNotaCampo);
+                    preparedStatement.setString(1, row.getNroObservacion());
+                    preparedStatement.setInt(2, row.getReconocedor());
+                    preparedStatement.setString(3, row.getFechaHora());
+                    preparedStatement.setDouble(4, row.getLongitud());
+                    preparedStatement.setDouble(5, row.getLatitud());
+                    preparedStatement.setDouble(6, row.getAltitud());
+                    preparedStatement.setString(7, row.getNombreSitio());
+                    preparedStatement.setInt(8, row.getEpocaClimatica());
+                    preparedStatement.setString(9, row.getDiasLluvia());
+                    preparedStatement.setInt(10, row.getGradiente());
+                    preparedStatement.setInt(11, row.getPendienteLongitud());
+                    preparedStatement.setInt(12, row.getPendienteForma());
+                    preparedStatement.setInt(13, row.getClaseErosion());
+                    preparedStatement.setInt(14, row.getTipoErosion());
+                    preparedStatement.setInt(15, row.getGradoErosion());
+                    preparedStatement.setInt(16, row.getClaseMovimiento());
+                    preparedStatement.setInt(17, row.getTipoMovimiento());
+                    preparedStatement.setInt(18, row.getFrecuenciaMovimiento());
+                    preparedStatement.setInt(19, row.getAnegamiento());
+                    preparedStatement.setInt(20, row.getFrecuencia());
+                    preparedStatement.setInt(21, row.getDuracion());
+                    preparedStatement.setInt(22, row.getPedregosidad());
+                    preparedStatement.setInt(23, row.getAfloramiento());
+                    preparedStatement.setString(24, row.getVegetacionNatural());
+                    preparedStatement.setInt(25, row.getGrupoUso());
+                    preparedStatement.setInt(26, row.getSubgrupoUso());
+                    preparedStatement.setString(27, row.getNombreCultivo());
+                    preparedStatement.setString(28, row.getObservaciones());
+                    preparedStatement.setInt(29, row.getEstado());
+                    preparedStatement.setString(30, row.getPaisaje());
+                    preparedStatement.setString(31, row.getSimbolo());
 
+                    try {
+                        preparedStatement.executeUpdate();
+                        message = "ESCOLLECTOR: Insertado en la base de datos " + database + " en tabla form_nota_campo el NroObservacion " + row.getNroObservacion();
+                        LOGGER.log(Level.INFO, message);
+                        count++;
+                    } catch (PSQLException ex) {
+                        if (ex.getSQLState().equals("23505")) {
+                            message = "ESCOLLECTOR: Error en la base de datos " + database + " en tabla form_nota_campo ya existe el NroObservacion " + row.getNroObservacion();
+                            LOGGER.log(Level.INFO, message);
+                        } else {
+                            LOGGER.log(Level.INFO, "ESCOLLECTOR: Error en la base de datos {0} en tabla form_nota_campo Error:{1}", new Object[]{database, ex.getMessage()});
+                        }
+                    }
                 }
+
+                message = "ESCOLLECTOR: En la base de datos " + database + " total de registros insertados en tabla form_nota_campo " + count;
+                LOGGER.log(Level.INFO, message);
             }
 
         } catch (ClassNotFoundException | SQLException ex) {
             LOGGER.log(Level.SEVERE, null, ex);
+        }
+    }
+
+    public static Date getDate(String strDate) {
+        SimpleDateFormat formatter = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss");
+        try {
+            java.util.Date date = formatter.parse(strDate);
+            return new Date(date.getTime());
+        } catch (Exception ex) {
+            return null;
         }
     }
 
