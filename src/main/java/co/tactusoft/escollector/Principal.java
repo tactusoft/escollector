@@ -389,7 +389,7 @@ public class Principal {
                     preparedStatement = connection.prepareStatement(insertNotaCampo);
                     preparedStatement.setString(1, row.getNroObservacion());
                     preparedStatement.setInt(2, row.getReconocedor());
-                    preparedStatement.setString(3, row.getFechaHora());
+                    preparedStatement.setDate(3, getDate(row.getFechaHora()));
                     preparedStatement.setDouble(4, row.getLongitud());
                     preparedStatement.setDouble(5, row.getLatitud());
                     preparedStatement.setDouble(6, row.getAltitud());
@@ -444,7 +444,7 @@ public class Principal {
     }
 
     public static Date getDate(String strDate) {
-        SimpleDateFormat formatter = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss");
+        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         try {
             java.util.Date date = formatter.parse(strDate);
             return new Date(date.getTime());
